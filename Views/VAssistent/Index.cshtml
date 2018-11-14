@@ -1,0 +1,117 @@
+﻿@model VAssistent.Assistent.API.Models.Demo
+
+@{
+    ViewData["Title"] = "VAssistent";
+}
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+
+<h2>Virtual Assistent</h2>
+<h4>(Alpha) v.0.1</h4>
+<hr />
+Examples of questions:
+<ul style="list-style-type:circle">
+    <li>What is the time?</li>
+    <li>What is the weather for tomorrow?</li>
+    <li>What is the weather for today like?</li>
+    <li>Open chrome</li>
+</ul>
+<hr />
+
+<div class="recognizer-container">
+    <button class="btn btn-recognizer" onclick="speech()"><i class="fas fa-microphone"></i></button>
+    <button class="btn btn-recognizer" onclick="talk()"><i class="fas fa-volume-up"></i></button>
+    <button class="btn btn-recognizer" onclick="stop()"><i class="far fa-stop-circle"></i></button>
+</div>
+
+<input type="text" id="phrase" />
+<button onclick="loadDoc()">load</button>
+<hr />
+<div id="speech"></div>
+
+<script>
+    var html = "";
+    function loadDoc() {
+        var object;
+        var phrase = document.getElementById("phrase").value;
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var old = html;
+                html = "";
+                object = JSON.parse(this.responseText);
+
+                if (object.Type == "BingSearch")
+                {
+                    for (var i = 0; i < object.Value.length; i++) {
+                        html += '<div style="width:80%; margin-bottom:10px; color:#2c3e50; background-color:#ecf0f1; text-align: left; padding:5px; font-size: 16px; margin-right: auto; margin-left: auto;">';
+                        html += '<div><a target="_blank" rel="noopener noreferrer" href="' + object.Value[i].url + '" style="color:#3498db;">' + object.Value[i].name + '</a></div>';
+                        html += '<div style="color:#2ecc71;">' + object.Value[i].displayUrl + '</div>';
+                        html += '<div>' + object.Value[i].snippet + '</div>';
+                        html += '</div>';
+                    }
+                }
+                if (object.hasOwnProperty('DisplayText'))
+                {
+                    html += '<div style="width:80%; margin-bottom:10px; color:#2c3e50; background-color:#ecf0f1; text-align: left; padding:5px; font-size: 16px; margin-right: auto; margin-left: auto;">';
+                    html += '<div style="color:#2c3e50;">' + object.DisplayText + '</div>';
+                    html += '</div>';
+                }
+                if (object.Type == "Local")
+                {
+                    html += '<div style="width:80%; margin-bottom:10px; color:#2c3e50; background-color:#ecf0f1; text-align: left; padding:5px; font-size: 16px; margin-right: auto; margin-left: auto;">';
+                    html += '<div style="color:#2c3e50;">' + object.Message + '</div>';
+                    html += '</div>';
+                }
+                html += old;
+                document.getElementById("speech").innerHTML = html;
+            }
+        };
+        xhttp.open("POST", document.baseURI+"VAssistent/RecogniseSpeech", true);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("text=" + phrase);
+    }
+</script>
+
+<script>
+  // cream recognizer
+  var recognizer = new webkitSpeechRecognition();
+
+  // recognarea vorbirii in process
+  recognizer.interimResults = true;
+
+  // limba
+  recognizer.lang = 'en-US';
+
+  // folosim callback p/u recognarea res
+  recognizer.onresult = function (event) {
+    var result = event.results[event.resultIndex];
+    if (result.isFinal) {
+      document.getElementById("phrase").value = result[0].transcript;
+      loadDoc();
+    } else {
+      console.log('Resultatul: ', result[0].transcript);
+    }
+  };
+
+  function speech() {
+    // pornim recognarea
+    recognizer.start();
+  }
+
+  var synth = window.speechSynthesis;
+  var utterance = new SpeechSynthesisUtterance('Norok, cum merge treaba?');
+
+  function talk() {
+  //citim textul din string
+    synth.speak(utterance);
+  }
+
+  function stop() {
+  //stopam recognarea
+    synth.pause();
+  }
+</script>
+
+
